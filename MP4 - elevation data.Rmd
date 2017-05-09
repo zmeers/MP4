@@ -1,0 +1,84 @@
+---
+title: "Mini Project 4 - Elevation"
+author: "Zoe Meers, Natasha Jadavji, Christine Yee, Julia Franchi"
+date: "4/21/2017"
+output: html_document
+---
+In this mini project, we determine the trail difficulty levels at the Macleish Field Station based on their length and change in elevation. In order to solve this prompt, we used the Macleish data, specifically pertaining to trails, and contour data specific to the area. 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r, include=FALSE, warning=FALSE}
+library(tidyverse)
+library(rgdal)
+library(rgeos)
+library(macleish)
+#install.packages("leaflet")
+```
+```{r, message=FALSE, echo=FALSE, warning=FALSE, include=FALSE}
+# Download terrain data for Whatley
+url <- "http://wsgw.mass.gov/data/gispub/shape/contours5k/hp337.zip"
+download.file(url, destfile = basename(url))
+unzip("hp337.zip", exdir = "whately_contours")
+# Load and transform
+whately_GIS_data <- path.expand("whately_contours")
+whately_contours <- readOGR(whately_GIS_data, "hp337") %>%
+  spTransform(CRS("+init=epsg:4326"))
+# Download terrain data for Conway
+url <- "http://wsgw.mass.gov/data/gispub/shape/contours5k/hp68.zip"
+download.file(url, destfile = basename(url))
+unzip("hp68.zip", exdir = "conway_contours")
+# Load and transform
+conway_GIS_data <- path.expand("conway_contours")
+conway_contours <- readOGR(conway_GIS_data, "hp68") %>%
+  spTransform(CRS("+init=epsg:4326"))
+# Merge the contours for both towns, then intersect with the boundary of Macleish
+macleish_contours <-
+  gUnion(conway_contours, whately_contours) %>%
+  gIntersection(macleish_layers[['boundary']])
+#remove(whately_contours, conway_contours)
+trail_points <- macleish_contours %>%
+  gIntersection(macleish_layers[['trails']])
+```
+```{r, message=FALSE}
+# Add polygons to leaflet map: Boundaries and Trails
+library(leaflet)
+m <- leaflet() %>%
+  addTiles() %>%
+  addPolylines(data = macleish_contours, weight = 1, color = "black") %>%
+  addPolylines(data = macleish_layers[["boundary"]], weight = 2, color = "green") %>%
+  addPolylines(data = macleish_layers[["trails"]], weight = 3) %>%
+  addCircleMarkers(data = trail_points, radius = 2, color = "purple") %>% addMeasure(activeColor="pink")
+m
+```
+Looking at our map, we can see where the trails intersect with contour lines and also measure the distance of the trails. Click on the measure tool in the upper-right corner to measure the distance from one point to another. 
+
+## Trail Difficulty:
+
+
+West Loop: Difficult (~1.22 miles, is steep in a lot of places, intersection with trail and contour lines occurs a lot)
+
+Poplar Road: Moderate (~2 miles, follows road, steep in some parts but not too bad)
+
+East Loop: Easy (~1.36 miles, elevation ramps up slowly)
+
+## Recommendation:
+
+
+Our recommendation is to clearly label trails by diffuclty level on a map. This will help hikers of all ages determine what trail is best suited to their capabilities. For instance, Ben and his child could take the East Loop trail, which is the easiest trail at Macleish. Also, we would like to develop a Macleish app, hoping that it will replace paper information. Our app will be sustainable and user-friendly, as it will have info on trail difficulty, a GPS, and fun facts about Macleish. 
+
+1. What will it cost?
+
+Printing costs are the sole cost behind our recommendation. We estimate that this will cost about $150 just for poster and signage fees. For the app, we will ask the comp sci department to collaborate with us, making sure that the app is built by Smithies for Smith. 
+
+2. How long will it take?
+
+It will take two weeks to complete. This includes the design process, printing and posting at key places at Macleish. The app development will take an estimated 6 months. 
+
+3. Are there any concerns about environmental impact?
+
+We will ensure that our posters are made of recyclable materials. The only environmental risk is that our posters fall and litter the grounds, but it won't consist of an additional environmental cost as the current Macleish posters also represent this risk. After labeling the trials based on easy, medium, difficult, more vistors may go on the easy trail than expected so that may affect the landscape. No environmental costs are associated with the app development.
+
+4. Do you see any major roadblocks? 
+
+Surge in printing prices and misinterpretation of poster information. As for the app, development issues and collaboration issues. 
